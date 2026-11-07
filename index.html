@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小数で覚える！〇割引・％引き・消費税計算機</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+        }
+        .tab-active {
+            border-bottom: 3px solid #4f46e5;
+            color: #4f46e5;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen pb-12">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-lg py-6 px-4 mb-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                    <i class="fa-solid fa-calculator text-3xl text-yellow-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-black tracking-tight">小数で覚える！割引・消費税計算機</h1>
+                    <p class="text-indigo-100 text-sm mt-0.5">〇割引・〇％引きの「小数の掛け算の仕組み」がひと目でわかる！</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 bg-indigo-700/60 px-4 py-2 rounded-xl text-xs font-medium border border-indigo-400/30">
+                <i class="fa-solid fa-lightbulb text-yellow-300 text-base"></i>
+                <span>計算公式: 定価 × (1 - 割引小数) × (1 + 税率小数)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation Mode Switcher -->
+    <div class="max-w-6xl mx-auto px-4 mb-6">
+        <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-2">
+            <button id="modePracticeBtn" onclick="switchAppMode('practice')" class="flex-1 py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md transition">
+                <i class="fa-solid fa-pen-to-square text-lg"></i>
+                ✍️ 自分で計算する（手動練習モード）
+            </button>
+            <button id="modeAutoBtn" onclick="switchAppMode('auto')" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-100 transition">
+                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                💡 自動計算（解説・検算モード）
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Input Form (5 cols on lg) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-indigo-600"></i>
+                        問題の条件設定
+                    </h2>
+                    <!-- Random Question Generator -->
+                    <button onclick="generateRandomQuestion()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-indigo-200 transition flex items-center gap-1">
+                        <i class="fa-solid fa-dice text-indigo-600"></i> 🎲 ランダム問題をつくる
+                    </button>
+                </div>
+
+                <!-- 1. Original Price Input -->
+                <div class="mb-5">
+                    <label for="priceInput" class="block text-sm font-bold text-slate-700 mb-1">
+                        本体価格 / 定価 <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative rounded-xl shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold">
+                            ¥
+                        </div>
+                        <input type="number" id="priceInput" placeholder="例: 1000" value="1000" min="0" step="1"
+                            class="block w-full pl-9 pr-12 py-3 text-lg font-bold rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 font-medium text-sm">
+                            円
+                        </div>
+                    </div>
+                    <!-- Quick Price Add Buttons -->
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <button onclick="addPrice(100)" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">+100円</button>
+                        <button onclick="addPrice(500)" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">+500円</button>
+                        <button onclick="addPrice(1000)" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">+1,000円</button>
+                        <button onclick="setPrice(5000)" class="px-2.5 py-1 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition font-medium">5千円</button>
+                        <button onclick="setPrice(10000)" class="px-2.5 py-1 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition font-medium">1万円</button>
+                        <button onclick="clearPrice()" class="px-2.5 py-1 text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition font-medium ml-auto">リセット</button>
+                    </div>
+                </div>
+
+                <!-- 2. Discount Mode Selection -->
+                <div class="mb-5">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">
+                        割引の入力方法を選んでください
+                    </label>
+                    <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl mb-3 text-xs font-bold text-center">
+                        <button id="tabWari" onclick="switchDiscountMode('wari')" class="py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition">
+                            〇割引 (割)
+                        </button>
+                        <button id="tabPercent" onclick="switchDiscountMode('percent')" class="py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">
+                            〇％引き (%)
+                        </button>
+                        <button id="tabDecimal" onclick="switchDiscountMode('decimal')" class="py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">
+                            直接小数倍 (×)
+                        </button>
+                    </div>
+
+                    <!-- Discount Input Area -->
+                    <div id="wariContainer" class="discount-input-block">
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="wariVal" value="2" min="0" max="10" step="0.5" 
+                                class="w-full py-2.5 px-3 border border-slate-300 rounded-xl font-bold text-slate-800 text-right focus:ring-2 focus:ring-indigo-500">
+                            <span class="font-bold text-slate-700 text-sm whitespace-nowrap">割引</span>
+                        </div>
+                        <input type="range" id="wariSlider" min="0" max="10" step="0.5" value="2" class="w-full mt-3 accent-indigo-600">
+                        <!-- Quick Wari Buttons -->
+                        <div class="grid grid-cols-5 gap-1.5 mt-2">
+                            <button onclick="setDiscount('wari', 1)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 font-medium">1割引</button>
+                            <button onclick="setDiscount('wari', 2)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 font-medium">2割引</button>
+                            <button onclick="setDiscount('wari', 3)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 font-medium">3割引</button>
+                            <button onclick="setDiscount('wari', 4)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 font-medium">4割引</button>
+                            <button onclick="setDiscount('wari', 5)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 font-medium">5割引</button>
+                        </div>
+                    </div>
+
+                    <div id="percentContainer" class="discount-input-block hidden">
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="percentVal" value="20" min="0" max="100" step="1" 
+                                class="w-full py-2.5 px-3 border border-slate-300 rounded-xl font-bold text-slate-800 text-right focus:ring-2 focus:ring-indigo-500">
+                            <span class="font-bold text-slate-700 text-sm whitespace-nowrap">％引き</span>
+                        </div>
+                        <input type="range" id="percentSlider" min="0" max="100" step="5" value="20" class="w-full mt-3 accent-indigo-600">
+                        <!-- Quick Percent Buttons -->
+                        <div class="grid grid-cols-5 gap-1.5 mt-2">
+                            <button onclick="setDiscount('percent', 5)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 font-medium">5%</button>
+                            <button onclick="setDiscount('percent', 10)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 font-medium">10%</button>
+                            <button onclick="setDiscount('percent', 20)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 font-medium">20%</button>
+                            <button onclick="setDiscount('percent', 30)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 font-medium">30%</button>
+                            <button onclick="setDiscount('percent', 50)" class="py-1 text-xs border border-slate-200 rounded-lg hover:bg-indigo-50 font-medium">50%</button>
+                        </div>
+                    </div>
+
+                    <div id="decimalContainer" class="discount-input-block hidden">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500 font-medium">定価の</span>
+                            <input type="number" id="decimalVal" value="0.8" min="0" max="1" step="0.01" 
+                                class="w-full py-2.5 px-3 border border-slate-300 rounded-xl font-bold text-slate-800 text-right focus:ring-2 focus:ring-indigo-500">
+                            <span class="font-bold text-slate-700 text-sm whitespace-nowrap">倍（かけ算）</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">※ 例: 0.8倍 ＝ 20%引き(2割引)で支払う割合</p>
+                    </div>
+                </div>
+
+                <!-- 3. Tax Settings -->
+                <div class="mb-5">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">
+                        消費税率
+                    </label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="setTaxRate(0.10)" id="tax10Btn" 
+                            class="tax-btn active-tax py-2.5 px-2 text-xs font-bold rounded-xl border border-indigo-600 bg-indigo-50 text-indigo-700 text-center transition">
+                            10% <br><span class="text-[10px] font-normal opacity-80">(標準)</span>
+                        </button>
+                        <button type="button" onclick="setTaxRate(0.08)" id="tax8Btn" 
+                            class="tax-btn py-2.5 px-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50 transition">
+                            8% <br><span class="text-[10px] font-normal opacity-80">(軽減税率)</span>
+                        </button>
+                        <button type="button" onclick="setTaxRate(0.0)" id="tax0Btn" 
+                            class="tax-btn py-2.5 px-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50 transition">
+                            非課税 <br><span class="text-[10px] font-normal opacity-80">(0%)</span>
+                        </button>
+                        <button type="button" onclick="enableCustomTax()" id="taxCustomBtn" 
+                            class="tax-btn py-2.5 px-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50 transition">
+                            自由指定 <br><span class="text-[10px] font-normal opacity-80">(％)</span>
+                        </button>
+                    </div>
+                    <div id="customTaxWrapper" class="mt-2 hidden">
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="customTaxInput" value="10" min="0" max="100" step="0.1" 
+                                class="w-full py-2 px-3 text-sm border border-slate-300 rounded-lg text-right font-bold">
+                            <span class="text-sm font-bold">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Rounding Rule -->
+                <div class="mb-5">
+                    <label for="roundingSelect" class="block text-sm font-bold text-slate-700 mb-1">
+                        1円未満の端数処理
+                    </label>
+                    <select id="roundingSelect" class="w-full py-2.5 px-3 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500">
+                        <option value="floor" selected>切り捨て（日本の標準的なレジ計算）</option>
+                        <option value="round">四捨五入</option>
+                        <option value="ceil">切り上げ</option>
+                    </select>
+                </div>
+
+                <!-- 5. Question Target Selector (NEW) -->
+                <div class="pt-4 border-t border-slate-200">
+                    <label for="targetItemSelect" class="block text-sm font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-bullseye text-indigo-600"></i> 答える項目（問題のタイプ）を選択
+                    </label>
+                    <select id="targetItemSelect" onchange="updateQuestionTarget()" class="w-full py-2.5 px-3 bg-indigo-50 border border-indigo-300 text-indigo-950 font-bold rounded-xl text-sm focus:ring-2 focus:ring-indigo-500">
+                        <option value="all" selected>🌟 すべての手順を答える（割合 → 式 → 税抜 → 税込）</option>
+                        <option value="formula_final">📝 計算式 ＋ 税込価格を答える</option>
+                        <option value="final_only">💰 税込合計金額のみを答える（スピード計算）</option>
+                        <option value="rate_only">📐 支払う割合（小数）のみを答える</option>
+                        <option value="tax_excl_only">🏷️ 税抜き価格のみを答える</option>
+                    </select>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Right Column: Results & Explanation (7 cols on lg) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+
+            <!-- Practice / Answer Input Section (Visible in Practice Mode) -->
+            <div id="practiceSection" class="bg-white rounded-2xl shadow-md border-2 border-indigo-500 p-6">
+                
+                <!-- Dynamic Problem Statement Box (NEW) -->
+                <div class="bg-indigo-900 text-white rounded-xl p-4 mb-5 shadow-sm border border-indigo-700 relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-20 h-20 bg-indigo-500/20 rounded-full blur-xl pointer-events-none"></div>
+                    <div class="flex items-center gap-2 text-xs font-bold text-yellow-300 mb-1">
+                        <i class="fa-solid fa-file-pen text-base"></i>
+                        <span>文章問題</span>
+                    </div>
+                    <p class="text-base md:text-lg font-bold leading-relaxed text-indigo-50" id="generatedProblemStatement">
+                        <!-- JS Dynamic Sentence -->
+                    </p>
+                </div>
+
+                <div class="flex justify-between items-center mb-4 border-b pb-3 border-slate-100">
+                    <div>
+                        <span class="bg-indigo-100 text-indigo-700 text-xs font-extrabold px-2.5 py-1 rounded-md">
+                            生徒用解答フォーム
+                        </span>
+                        <h3 class="text-lg font-black text-slate-800 mt-1">自分の手で計算して答えよう！</h3>
+                    </div>
+                    <div id="scoreBadge" class="hidden bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 border border-yellow-300">
+                        <i class="fa-solid fa-star text-yellow-500"></i> 連続正解: <span id="streakCount">0</span>問
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Q1: Decimal fraction -->
+                    <div id="q1Container" class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">
+                            Q. 割引後に「支払う割合」を小数で答えてね（例: 2割引なら 0.8）
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold text-slate-500">定価の</span>
+                            <input type="number" id="userAnsFraction" placeholder="例: 0.8" step="0.01" min="0" max="1"
+                                class="w-full py-2 px-3 border border-slate-300 rounded-lg text-lg font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500">
+                            <span class="text-sm font-bold text-slate-500">倍</span>
+                        </div>
+                    </div>
+
+                    <!-- Q2: Formula Input -->
+                    <div id="q2Container" class="bg-amber-50/60 p-4 rounded-xl border border-amber-200">
+                        <label class="block text-xs font-bold text-amber-900 mb-1">
+                            <i class="fa-solid fa-square-root-variable text-amber-600 mr-1"></i>
+                            Q. 計算式を作ってみよう！（例: 1000 × 0.8 × 1.1）
+                        </label>
+                        <div class="relative mb-2">
+                            <input type="text" id="userAnsFormula" placeholder="例: 1000 × 0.8 × 1.1" 
+                                class="w-full py-2.5 px-3 border border-amber-300 rounded-lg text-base font-mono font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 bg-white">
+                        </div>
+                        <!-- Quick Formula Helper Buttons -->
+                        <div class="text-[11px] font-bold text-slate-500 mb-1">タップで式に入力：</div>
+                        <div class="flex flex-wrap gap-1.5" id="formulaHelperBtns">
+                            <button onclick="insertFormulaToken('price')" class="px-2.5 py-1 text-xs bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 rounded-md font-bold shadow-sm transition">
+                                定価(<span id="btnPriceLabel">1000</span>)
+                            </button>
+                            <button onclick="insertFormulaToken('×')" class="px-2.5 py-1 text-xs bg-amber-600 hover:bg-amber-700 text-white rounded-md font-extrabold shadow-sm transition">
+                                ×
+                            </button>
+                            <button onclick="insertFormulaToken('frac')" class="px-2.5 py-1 text-xs bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 rounded-md font-bold shadow-sm transition">
+                                割合(<span id="btnFracLabel">0.8</span>)
+                            </button>
+                            <button onclick="insertFormulaToken('×')" class="px-2.5 py-1 text-xs bg-amber-600 hover:bg-amber-700 text-white rounded-md font-extrabold shadow-sm transition">
+                                ×
+                            </button>
+                            <button onclick="insertFormulaToken('tax')" class="px-2.5 py-1 text-xs bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 rounded-md font-bold shadow-sm transition">
+                                税率(<span id="btnTaxLabel">1.1</span>)
+                            </button>
+                            <button onclick="insertFormulaToken('(')" class="px-2.5 py-1 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md font-bold transition">(</button>
+                            <button onclick="insertFormulaToken(')')" class="px-2.5 py-1 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md font-bold transition">)</button>
+                            <button onclick="clearFormulaInput()" class="px-2 py-1 text-xs bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-md font-bold transition ml-auto">式を消す</button>
+                        </div>
+                    </div>
+
+                    <!-- Q3: Tax Excl Price -->
+                    <div id="q3Container" class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">
+                            Q. 値引き後の「税抜き価格」はいくら？（端数処理に注意）
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="userAnsTaxExcl" placeholder="例: 800" step="1" min="0"
+                                class="w-full py-2 px-3 border border-slate-300 rounded-lg text-lg font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500">
+                            <span class="text-sm font-bold text-slate-500">円</span>
+                        </div>
+                    </div>
+
+                    <!-- Q4: Tax Incl Final Price -->
+                    <div id="q4Container" class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">
+                            Q. 消費税を入れた「最終的な支払い金額（税込）」はいくら？
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="userAnsFinal" placeholder="例: 880" step="1" min="0"
+                                class="w-full py-2 px-3 border border-slate-300 rounded-lg text-xl font-black text-indigo-600 focus:ring-2 focus:ring-indigo-500">
+                            <span class="text-sm font-bold text-slate-500">円（税込）</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Answer Button -->
+                    <button onclick="checkStudentAnswers()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-black text-base rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-check"></i>
+                        答え合わせをする！
+                    </button>
+                </div>
+
+                <!-- Feedback Result Area -->
+                <div id="feedbackResult" class="mt-5 hidden rounded-xl p-5 border">
+                    <!-- Dynamic Answer Feedback JS -->
+                </div>
+            </div>
+
+            <!-- Auto Result Overview Card (Hidden in Practice Mode) -->
+            <div id="autoResultCard" class="hidden bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-2xl shadow-lg p-6 relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="bg-yellow-400 text-slate-950 text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+                            自動計算結果
+                        </span>
+                        <h3 class="text-xs text-indigo-200 mt-2">消費税込み合計金額</h3>
+                    </div>
+                    <button onclick="addToCart()" class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition shadow-md">
+                        <i class="fa-solid fa-plus"></i> リストに追加
+                    </button>
+                </div>
+
+                <!-- Main Displayed Price -->
+                <div class="flex items-baseline gap-2 mb-6">
+                    <span class="text-4xl md:text-5xl font-black tracking-tight text-yellow-300" id="finalPriceDisplay">
+                        ¥0
+                    </span>
+                    <span class="text-sm font-medium text-slate-300">（税込）</span>
+                </div>
+
+                <!-- Grid Details Breakdown -->
+                <div class="grid grid-cols-3 gap-3 pt-4 border-t border-indigo-700/60 text-center">
+                    <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                        <div class="text-[11px] text-indigo-200">値引き額</div>
+                        <div class="text-lg font-bold text-emerald-300 mt-0.5" id="discountAmountDisplay">¥0</div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                        <div class="text-[11px] text-indigo-200">税抜き価格</div>
+                        <div class="text-lg font-bold text-white mt-0.5" id="taxExclDisplay">¥0</div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                        <div class="text-[11px] text-indigo-200">消費税額</div>
+                        <div class="text-lg font-bold text-amber-300 mt-0.5" id="taxAmountDisplay">¥0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Math Formula Explanation Block -->
+            <div id="explanationBlock" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hidden">
+                <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-indigo-600"></i>
+                    小数の計算ロジック解説
+                </h3>
+
+                <div class="space-y-4">
+                    <!-- Step 1: Discount in Decimals -->
+                    <div class="bg-indigo-50/70 rounded-xl p-4 border border-indigo-100">
+                        <div class="flex items-center gap-2 text-xs font-bold text-indigo-900 mb-1">
+                            <span class="bg-indigo-600 text-white rounded-md px-2 py-0.5">ステップ 1</span>
+                            割引率を小数に直して「支払う割合」を出す
+                        </div>
+                        <p class="text-sm text-slate-700" id="step1Text">
+                            <!-- JS filled -->
+                        </p>
+                    </div>
+
+                    <!-- Step 2: Calculate Tax-Excluded Price -->
+                    <div class="bg-blue-50/70 rounded-xl p-4 border border-blue-100">
+                        <div class="flex items-center gap-2 text-xs font-bold text-blue-900 mb-1">
+                            <span class="bg-blue-600 text-white rounded-md px-2 py-0.5">ステップ 2</span>
+                            値引き後の税抜き価格を計算する
+                        </div>
+                        <p class="text-sm text-slate-700" id="step2Text">
+                            <!-- JS filled -->
+                        </p>
+                    </div>
+
+                    <!-- Step 3: Tax Rate in Decimals -->
+                    <div class="bg-amber-50/70 rounded-xl p-4 border border-amber-100">
+                        <div class="flex items-center gap-2 text-xs font-bold text-amber-900 mb-1">
+                            <span class="bg-amber-600 text-white rounded-md px-2 py-0.5">ステップ 3</span>
+                            消費税を小数で含める（×1.1 または ×1.08）
+                        </div>
+                        <p class="text-sm text-slate-700" id="step3Text">
+                            <!-- JS filled -->
+                        </p>
+                    </div>
+
+                    <!-- Combined Formula -->
+                    <div class="bg-slate-900 text-white rounded-xl p-4">
+                        <div class="text-xs text-indigo-300 font-bold mb-1">式を1つにまとめた一括計算式:</div>
+                        <div class="text-sm font-mono font-bold text-yellow-300 break-all" id="combinedFormulaText">
+                            <!-- JS filled -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shopping List / Basket Sum -->
+            <div id="cartSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-basket-shopping text-emerald-600"></i>
+                        買い物リスト（合計計算）
+                    </h3>
+                    <button onclick="clearCart()" class="text-xs text-rose-500 hover:text-rose-700 font-medium">
+                        全削除
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto mb-4">
+                    <table class="w-full text-xs text-left text-slate-700">
+                        <thead class="bg-slate-100 text-slate-600 font-bold">
+                            <tr>
+                                <th class="p-2.5 rounded-l-lg">商品/定価</th>
+                                <th class="p-2.5">割引条件</th>
+                                <th class="p-2.5">税込金額</th>
+                                <th class="p-2.5 text-center rounded-r-lg">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartTableBody" class="divide-y divide-slate-100 font-medium">
+                            <!-- Dynamic Cart Items -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-between items-center pt-3 border-t border-slate-200 bg-emerald-50 p-3 rounded-xl">
+                    <span class="text-xs font-bold text-emerald-900">リスト合計（税込）</span>
+                    <span class="text-2xl font-black text-emerald-700" id="cartTotalDisplay">¥0</span>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Bottom Section: Quick Reference Matrix & Decimal Guide -->
+    <section class="max-w-6xl mx-auto px-4 mt-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-table-cells text-indigo-600"></i>
+                現在の入力金額（<span id="matrixBasePrice">¥1,000</span>）の割引・税込み早見表
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">よく使われる割引きパターンを一覧で比較できます。（消費税率は選択中の設定を適用）</p>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3" id="quickMatrixGrid">
+                <!-- Dynamic Matrix Cards -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Knowledge Section: Decimal Basics -->
+    <section class="max-w-6xl mx-auto px-4 mt-8">
+        <div class="bg-indigo-900 text-white rounded-2xl p-6 shadow-md">
+            <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-yellow-300">
+                <i class="fa-solid fa-book-open"></i>
+                【おさらい】割合・％・割と小数の関係
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div class="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-indigo-700">
+                    <div class="font-bold text-sm text-yellow-300 mb-2">「割」と小数の関係</div>
+                    <ul class="space-y-1 text-indigo-100">
+                        <li>・1割 ＝ 0.1（10%）</li>
+                        <li>・2割 ＝ 0.2（20%）</li>
+                        <li>・3割 ＝ 0.3（30%）</li>
+                        <li>・3割5分 ＝ 0.35（35%）</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-indigo-700">
+                    <div class="font-bold text-sm text-yellow-300 mb-2">「〇割引」のかけ算</div>
+                    <ul class="space-y-1 text-indigo-100">
+                        <li>・1割引 ＝ 残り 0.9 をかける</li>
+                        <li>・2割引 ＝ 残り 0.8 をかける</li>
+                        <li>・3割引 ＝ 残り 0.7 をかける</li>
+                        <li>・5割引（半額）＝ 残り 0.5 をかける</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-indigo-700">
+                    <div class="font-bold text-sm text-yellow-300 mb-2">「消費税」のかけ算</div>
+                    <ul class="space-y-1 text-indigo-100">
+                        <li>・消費税10% ＝ 本体 × 1.10</li>
+                        <li>・消費税8% ＝ 本体 × 1.08</li>
+                        <li>・本体100% (1.0) ＋ 税 (0.1) ＝ 1.1</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // State variables
+        let appMode = 'practice'; // 'practice' (student calculates) or 'auto' (automatic calculation)
+        let currentDiscountMode = 'wari'; // 'wari', 'percent', 'decimal'
+        let currentTaxRate = 0.10; // default 10%
+        let shoppingCart = [];
+        let streak = 0;
+
+        // Calculated correct answers store for evaluation
+        let currentAnswers = {
+            payFraction: 0.8,
+            taxExclPrice: 800,
+            finalPrice: 880
+        };
+
+        // Utility: Apply Rounding Rule
+        function applyRounding(val, rule) {
+            if (isNaN(val)) return 0;
+            if (rule === 'round') return Math.round(val);
+            if (rule === 'ceil') return Math.ceil(val);
+            return Math.floor(val); // default floor
+        }
+
+        // Utility: Format Yen Currency
+        function formatYen(val) {
+            return '¥' + Math.floor(val).toLocaleString();
+        }
+
+        // Mode Switcher (Practice vs Auto)
+        function switchAppMode(mode) {
+            appMode = mode;
+            const practiceBtn = document.getElementById('modePracticeBtn');
+            const autoBtn = document.getElementById('modeAutoBtn');
+            const practiceSec = document.getElementById('practiceSection');
+            const autoResultCard = document.getElementById('autoResultCard');
+
+            if (mode === 'practice') {
+                practiceBtn.className = "flex-1 py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md transition";
+                autoBtn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-100 transition";
+                practiceSec.classList.remove('hidden');
+                autoResultCard.classList.add('hidden');
+            } else {
+                autoBtn.className = "flex-1 py-3 px-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md transition";
+                practiceBtn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-slate-600 hover:bg-slate-100 transition";
+                practiceSec.classList.add('hidden');
+                autoResultCard.classList.remove('hidden');
+                document.getElementById('explanationBlock').classList.remove('hidden');
+            }
+        }
+
+        // Switch Discount Mode (Wari / Percent / Decimal)
+        function switchDiscountMode(mode) {
+            currentDiscountMode = mode;
+            document.getElementById('tabWari').className = mode === 'wari' ? 'py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition font-bold' : 'py-2 rounded-lg text-slate-600 hover:text-slate-900 transition font-bold';
+            document.getElementById('tabPercent').className = mode === 'percent' ? 'py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition font-bold' : 'py-2 rounded-lg text-slate-600 hover:text-slate-900 transition font-bold';
+            document.getElementById('tabDecimal').className = mode === 'decimal' ? 'py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition font-bold' : 'py-2 rounded-lg text-slate-600 hover:text-slate-900 transition font-bold';
+
+            document.getElementById('wariContainer').classList.toggle('hidden', mode !== 'wari');
+            document.getElementById('percentContainer').classList.toggle('hidden', mode !== 'percent');
+            document.getElementById('decimalContainer').classList.toggle('hidden', mode !== 'decimal');
+
+            resetFeedback();
+            calculateAll();
+        }
+
+        // Quick Set Discount
+        function setDiscount(mode, val) {
+            if (mode === 'wari') {
+                wariVal.value = val;
+                wariSlider.value = val;
+            } else if (mode === 'percent') {
+                percentVal.value = val;
+                percentSlider.value = val;
+            } else if (mode === 'decimal') {
+                decimalVal.value = val;
+            }
+            resetFeedback();
+            calculateAll();
+        }
+
+        // Price helper functions
+        function addPrice(amount) {
+            const cur = parseFloat(priceInput.value) || 0;
+            priceInput.value = cur + amount;
+            resetFeedback();
+            calculateAll();
+        }
+
+        function setPrice(amount) {
+            priceInput.value = amount;
+            resetFeedback();
+            calculateAll();
+        }
+
+        function clearPrice() {
+            priceInput.value = '';
+            resetFeedback();
+            calculateAll();
+        }
+
+        // Tax Rate Selector
+        function setTaxRate(rate) {
+            currentTaxRate = rate;
+            document.getElementById('customTaxWrapper').classList.add('hidden');
+
+            ['tax10Btn', 'tax8Btn', 'tax0Btn', 'taxCustomBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.className = 'tax-btn py-2.5 px-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50 transition';
+            });
+
+            if (rate === 0.10) document.getElementById('tax10Btn').className = 'tax-btn active-tax py-2.5 px-2 text-xs font-bold rounded-xl border border-indigo-600 bg-indigo-50 text-indigo-700 text-center transition';
+            else if (rate === 0.08) document.getElementById('tax8Btn').className = 'tax-btn active-tax py-2.5 px-2 text-xs font-bold rounded-xl border border-indigo-600 bg-indigo-50 text-indigo-700 text-center transition';
+            else if (rate === 0.0) document.getElementById('tax0Btn').className = 'tax-btn active-tax py-2.5 px-2 text-xs font-bold rounded-xl border border-indigo-600 bg-indigo-50 text-indigo-700 text-center transition';
+
+            resetFeedback();
+            calculateAll();
+        }
+
+        function enableCustomTax() {
+            document.getElementById('customTaxWrapper').classList.remove('hidden');
+            ['tax10Btn', 'tax8Btn', 'tax0Btn', 'taxCustomBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.className = 'tax-btn py-2.5 px-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50 transition';
+            });
+            document.getElementById('taxCustomBtn').className = 'tax-btn active-tax py-2.5 px-2 text-xs font-bold rounded-xl border border-indigo-600 bg-indigo-50 text-indigo-700 text-center transition';
+
+            const customVal = parseFloat(document.getElementById('customTaxInput').value) || 0;
+            currentTaxRate = customVal / 100;
+            resetFeedback();
+            calculateAll();
+        }
+
+        // Generate Random Drill Question
+        function generateRandomQuestion() {
+            const basePrices = [400, 500, 600, 800, 1000, 1200, 1500, 2000, 2500, 3000, 4000, 5000, 8000, 10000];
+            const randPrice = basePrices[Math.floor(Math.random() * basePrices.length)];
+            priceInput.value = randPrice;
+
+            const modes = ['wari', 'percent'];
+            const chosenMode = modes[Math.floor(Math.random() * modes.length)];
+
+            if (chosenMode === 'wari') {
+                const wariOpts = [1, 2, 3, 4, 5];
+                const w = wariOpts[Math.floor(Math.random() * wariOpts.length)];
+                switchDiscountMode('wari');
+                setDiscount('wari', w);
+            } else {
+                const pctOpts = [10, 20, 25, 30, 50];
+                const p = pctOpts[Math.floor(Math.random() * pctOpts.length)];
+                switchDiscountMode('percent');
+                setDiscount('percent', p);
+            }
+
+            const taxOpts = [0.10, 0.08];
+            const t = taxOpts[Math.floor(Math.random() * taxOpts.length)];
+            setTaxRate(t);
+
+            document.getElementById('userAnsFraction').value = '';
+            document.getElementById('userAnsFormula').value = '';
+            document.getElementById('userAnsTaxExcl').value = '';
+            document.getElementById('userAnsFinal').value = '';
+            resetFeedback();
+        }
+
+        // Reset Feedback display
+        function resetFeedback() {
+            const feedback = document.getElementById('feedbackResult');
+            if (feedback) feedback.classList.add('hidden');
+            if (appMode === 'practice') {
+                const explanation = document.getElementById('explanationBlock');
+                if (explanation) explanation.classList.add('hidden');
+            }
+        }
+
+        // Helper buttons to insert formula tokens
+        function insertFormulaToken(token) {
+            const input = document.getElementById('userAnsFormula');
+            const rawPrice = parseFloat(priceInput.value) || 0;
+            const payFrac = currentAnswers.payFraction;
+            const taxMult = Math.round((1 + currentTaxRate) * 100) / 100;
+
+            let valueToAdd = token;
+            if (token === 'price') valueToAdd = rawPrice;
+            else if (token === 'frac') valueToAdd = payFrac;
+            else if (token === 'tax') valueToAdd = taxMult;
+
+            if (input.value.length > 0 && !input.value.endsWith(' ') && valueToAdd !== ')') {
+                input.value += ' ';
+            }
+            input.value += valueToAdd;
+            if (valueToAdd === '×' || valueToAdd === '(') {
+                input.value += ' ';
+            }
+        }
+
+        function clearFormulaInput() {
+            document.getElementById('userAnsFormula').value = '';
+        }
+
+        // Safely evaluate formula input by student
+        function evalUserFormula(formulaStr) {
+            if (!formulaStr || !formulaStr.trim()) return null;
+            try {
+                let sanitized = formulaStr.replace(/,/g, '').replace(/×/g, '*').replace(/÷/g, '/');
+                if (/[^0-9\.\+\-\*\/\(\)\s]/.test(sanitized)) {
+                    return null;
+                }
+                const res = Function(`"use strict"; return (${sanitized})`)();
+                if (typeof res === 'number' && !isNaN(res) && isFinite(res)) {
+                    return res;
+                }
+                return null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // DOM elements
+        const priceInput = document.getElementById('priceInput');
+        const wariVal = document.getElementById('wariVal');
+        const wariSlider = document.getElementById('wariSlider');
+        const percentVal = document.getElementById('percentVal');
+        const percentSlider = document.getElementById('percentSlider');
+        const decimalVal = document.getElementById('decimalVal');
+        const roundingSelect = document.getElementById('roundingSelect');
+        const targetItemSelect = document.getElementById('targetItemSelect');
+
+        // Initial setup
+        window.onload = function() {
+            attachEventListeners();
+            calculateAll();
+            switchAppMode('practice');
+        };
+
+        // Switch Question Target Items
+        function updateQuestionTarget() {
+            const mode = targetItemSelect.value;
+            const q1 = document.getElementById('q1Container');
+            const q2 = document.getElementById('q2Container');
+            const q3 = document.getElementById('q3Container');
+            const q4 = document.getElementById('q4Container');
+
+            // Hide all first
+            q1.classList.add('hidden');
+            q2.classList.add('hidden');
+            q3.classList.add('hidden');
+            q4.classList.add('hidden');
+
+            if (mode === 'all') {
+                q1.classList.remove('hidden');
+                q2.classList.remove('hidden');
+                q3.classList.remove('hidden');
+                q4.classList.remove('hidden');
+            } else if (mode === 'formula_final') {
+                q2.classList.remove('hidden');
+                q4.classList.remove('hidden');
+            } else if (mode === 'final_only') {
+                q4.classList.remove('hidden');
+            } else if (mode === 'rate_only') {
+                q1.classList.remove('hidden');
+            } else if (mode === 'tax_excl_only') {
+                q3.classList.remove('hidden');
+            }
+
+            resetFeedback();
+            updateProblemSentence();
+        }
+
+        // Generate Problem Sentence Text
+        function updateProblemSentence() {
+            const rawPrice = (parseFloat(priceInput.value) || 0).toLocaleString();
+            let discountDesc = '';
+            if (currentDiscountMode === 'wari') descStr = `${wariVal.value}割引`;
+            else if (currentDiscountMode === 'percent') descStr = `${percentVal.value}%引き`;
+            else descStr = `定価の${decimalVal.value}倍`;
+
+            const taxPercent = Math.round(currentTaxRate * 100);
+            const targetMode = targetItemSelect.value;
+
+            let questionEnding = '';
+            if (targetMode === 'all') {
+                questionEnding = '割引後に<b>支払う割合（小数）</b>、<b>計算式</b>、<b>税抜き価格</b>、および<b>消費税込みの合計金額</b>をそれぞれ求めましょう。';
+            } else if (targetMode === 'formula_final') {
+                questionEnding = '計算式を立てて、<b>消費税込みの合計金額</b>を求めましょう。';
+            } else if (targetMode === 'final_only') {
+                questionEnding = '<b>消費税込みの最終的な支払い金額</b>はいくらになるか答えましょう。';
+            } else if (targetMode === 'rate_only') {
+                questionEnding = '割引後に<b>支払う割合（小数）</b>はいくらになるか答えましょう。';
+            } else if (targetMode === 'tax_excl_only') {
+                questionEnding = '値引き後の<b>税抜き価格</b>はいくらになるか答えましょう。';
+            }
+
+            const sentence = `定価 <b>${rawPrice}円</b> の商品が <b>${descStr}</b> で売られています。（消費税: <b>${taxPercent}%</b>）<br>${questionEnding}`;
+            document.getElementById('generatedProblemStatement').innerHTML = sentence;
+        }
+
+        function attachEventListeners() {
+            // Input changes trigger recalculation
+            priceInput.addEventListener('input', () => { resetFeedback(); calculateAll(); });
+            
+            wariVal.addEventListener('input', (e) => {
+                wariSlider.value = e.target.value;
+                resetFeedback();
+                calculateAll();
+            });
+            wariSlider.addEventListener('input', (e) => {
+                wariVal.value = e.target.value;
+                resetFeedback();
+                calculateAll();
+            });
+
+            percentVal.addEventListener('input', (e) => {
+                percentSlider.value = e.target.value;
+                resetFeedback();
+                calculateAll();
+            });
+            percentSlider.addEventListener('input', (e) => {
+                percentVal.value = e.target.value;
+                resetFeedback();
+                calculateAll();
+            });
+
+            decimalVal.addEventListener('input', () => { resetFeedback(); calculateAll(); });
+            roundingSelect.addEventListener('change', () => { resetFeedback(); calculateAll(); });
+
+            document.getElementById('customTaxInput').addEventListener('input', (e) => {
+                currentTaxRate = (parseFloat(e.target.value) || 0) / 100;
+                resetFeedback();
+                calculateAll();
+            });
+        }
+
+        // Student Answer Verification Function (Updated to evaluate only selected targets)
+        function checkStudentAnswers() {
+            const targetMode = targetItemSelect.value;
+            const userFrac = parseFloat(document.getElementById('userAnsFraction').value);
+            const userFormulaStr = document.getElementById('userAnsFormula').value;
+            const userTaxExcl = parseFloat(document.getElementById('userAnsTaxExcl').value);
+            const userFinal = parseFloat(document.getElementById('userAnsFinal').value);
+
+            const feedback = document.getElementById('feedbackResult');
+            feedback.classList.remove('hidden');
+
+            const isQ1Correct = Math.abs(userFrac - currentAnswers.payFraction) < 0.001;
+            
+            // Formula checking
+            const evaluatedFormulaVal = evalUserFormula(userFormulaStr);
+            let isFormulaCorrect = false;
+
+            if (evaluatedFormulaVal !== null) {
+                const roundedFormulaVal = applyRounding(evaluatedFormulaVal, roundingSelect.value);
+                if (roundedFormulaVal === currentAnswers.finalPrice || roundedFormulaVal === currentAnswers.taxExclPrice) {
+                    isFormulaCorrect = true;
+                } else if (Math.abs(evaluatedFormulaVal - currentAnswers.finalPrice) < 2) {
+                    isFormulaCorrect = true;
+                }
+            }
+
+            const isQ3Correct = userTaxExcl === currentAnswers.taxExclPrice;
+            const isQ4Correct = userFinal === currentAnswers.finalPrice;
+
+            // Determine check criteria based on current question target
+            let allCorrect = false;
+            let checkListHTML = '';
+
+            if (targetMode === 'all') {
+                allCorrect = isQ1Correct && isFormulaCorrect && isQ3Correct && isQ4Correct;
+                checkListHTML += isQ1Correct ? `<li class="text-emerald-700">⭕ 支払う割合: 正解！ (${currentAnswers.payFraction})</li>` : `<li class="text-rose-700">❌ 支払う割合: 正解は <b>${currentAnswers.payFraction}</b></li>`;
+                checkListHTML += isFormulaCorrect ? `<li class="text-emerald-700">⭕ 計算式: 正解！ (${userFormulaStr})</li>` : `<li class="text-rose-700">❌ 計算式: 式の結果 (${evaluatedFormulaVal ?? '評価不可'}) が合いません</li>`;
+                checkListHTML += isQ3Correct ? `<li class="text-emerald-700">⭕ 税抜き価格: 正解！ (${currentAnswers.taxExclPrice.toLocaleString()}円)</li>` : `<li class="text-rose-700">❌ 税抜き価格: 正解は <b>${currentAnswers.taxExclPrice.toLocaleString()}円</b></li>`;
+                checkListHTML += isQ4Correct ? `<li class="text-emerald-700">⭕ 税込合計: 正解！ (${currentAnswers.finalPrice.toLocaleString()}円)</li>` : `<li class="text-rose-700">❌ 税込合計: 正解は <b>${currentAnswers.finalPrice.toLocaleString()}円</b></li>`;
+            } else if (targetMode === 'formula_final') {
+                allCorrect = isFormulaCorrect && isQ4Correct;
+                checkListHTML += isFormulaCorrect ? `<li class="text-emerald-700">⭕ 計算式: 正解！ (${userFormulaStr})</li>` : `<li class="text-rose-700">❌ 計算式: 式の結果 (${evaluatedFormulaVal ?? '評価不可'}) が合いません</li>`;
+                checkListHTML += isQ4Correct ? `<li class="text-emerald-700">⭕ 税込合計: 正解！ (${currentAnswers.finalPrice.toLocaleString()}円)</li>` : `<li class="text-rose-700">❌ 税込合計: 正解は <b>${currentAnswers.finalPrice.toLocaleString()}円</b></li>`;
+            } else if (targetMode === 'final_only') {
+                allCorrect = isQ4Correct;
+                checkListHTML += isQ4Correct ? `<li class="text-emerald-700">⭕ 税込合計: 正解！ (${currentAnswers.finalPrice.toLocaleString()}円)</li>` : `<li class="text-rose-700">❌ 税込合計: 正解は <b>${currentAnswers.finalPrice.toLocaleString()}円</b></li>`;
+            } else if (targetMode === 'rate_only') {
+                allCorrect = isQ1Correct;
+                checkListHTML += isQ1Correct ? `<li class="text-emerald-700">⭕ 支払う割合: 正解！ (${currentAnswers.payFraction})</li>` : `<li class="text-rose-700">❌ 支払う割合: 正解は <b>${currentAnswers.payFraction}</b></li>`;
+            } else if (targetMode === 'tax_excl_only') {
+                allCorrect = isQ3Correct;
+                checkListHTML += isQ3Correct ? `<li class="text-emerald-700">⭕ 税抜き価格: 正解！ (${currentAnswers.taxExclPrice.toLocaleString()}円)</li>` : `<li class="text-rose-700">❌ 税抜き価格: 正解は <b>${currentAnswers.taxExclPrice.toLocaleString()}円</b></li>`;
+            }
+
+            if (allCorrect) {
+                streak++;
+                document.getElementById('scoreBadge').classList.remove('hidden');
+                document.getElementById('streakCount').innerText = streak;
+
+                feedback.className = 'mt-5 rounded-xl p-5 bg-emerald-50 border-2 border-emerald-400 text-emerald-900';
+                feedback.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-circle-check text-3xl text-emerald-600"></i>
+                        <div>
+                            <h4 class="text-lg font-black text-emerald-800">大正解！完璧です！🎉</h4>
+                            <p class="text-xs font-medium text-emerald-700 mt-0.5">
+                                正しい考え方で計算できました！
+                            </p>
+                        </div>
+                    </div>
+                    <ul class="text-xs font-bold space-y-1 mt-3 bg-emerald-100/60 p-3 rounded-lg">
+                        ${checkListHTML}
+                    </ul>
+                `;
+                document.getElementById('explanationBlock').classList.remove('hidden');
+            } else {
+                streak = 0;
+                document.getElementById('streakCount').innerText = 0;
+
+                feedback.className = 'mt-5 rounded-xl p-5 bg-rose-50 border-2 border-rose-300 text-rose-900';
+                feedback.innerHTML = `
+                    <div class="mb-3">
+                        <h4 class="text-base font-bold text-rose-800 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+                            もう一度チェックしてみよう！
+                        </h4>
+                        <ul class="text-xs font-bold space-y-1 mt-2 bg-white/70 p-3 rounded-lg border border-rose-200">
+                            ${checkListHTML}
+                        </ul>
+                    </div>
+                    <button onclick="document.getElementById('explanationBlock').classList.remove('hidden')" 
+                        class="text-xs text-indigo-600 hover:text-indigo-800 font-bold underline flex items-center gap-1">
+                        <i class="fa-solid fa-lightbulb"></i> ヒント・詳しい小数の計算解説を見る
+                    </button>
+                `;
+            }
+        }
+
+        // Main Calculation Engine (Updated)
+        function calculateAll() {
+            const rawPrice = parseFloat(priceInput.value) || 0;
+            const roundingRule = roundingSelect.value;
+
+            // 1. Calculate discount fraction (0.0 to 1.0)
+            let discountFraction = 0; // The portion deducted
+            let payFraction = 1.0; // The portion paid (1 - discountFraction)
+
+            if (currentDiscountMode === 'wari') {
+                const w = parseFloat(wariVal.value) || 0;
+                discountFraction = w / 10;
+                payFraction = Math.max(0, 1 - discountFraction);
+            } else if (currentDiscountMode === 'percent') {
+                const p = parseFloat(percentVal.value) || 0;
+                discountFraction = p / 100;
+                payFraction = Math.max(0, 1 - discountFraction);
+            } else if (currentDiscountMode === 'decimal') {
+                const mult = parseFloat(decimalVal.value) || 0;
+                payFraction = Math.max(0, mult);
+                discountFraction = 1 - payFraction;
+            }
+
+            // Clean round payFraction for exact comparison
+            payFraction = Math.round(payFraction * 1000) / 1000;
+
+            // 2. Step by Step calculations
+            const taxExclPriceExact = rawPrice * payFraction;
+            const taxExclPrice = applyRounding(taxExclPriceExact, roundingRule);
+            const discountAmount = Math.max(0, rawPrice - taxExclPrice);
+
+            const taxMultiplier = 1 + currentTaxRate;
+            const finalTaxInclPriceExact = taxExclPrice * taxMultiplier;
+            const finalTaxInclPrice = applyRounding(finalTaxInclPriceExact, roundingRule);
+            const taxAmount = finalTaxInclPrice - taxExclPrice;
+
+            // Save correct answers for validation
+            currentAnswers = {
+                payFraction: payFraction,
+                taxExclPrice: taxExclPrice,
+                finalPrice: finalTaxInclPrice
+            };
+
+            // Update Formula Helper Button Labels
+            const btnPrice = document.getElementById('btnPriceLabel');
+            const btnFrac = document.getElementById('btnFracLabel');
+            const btnTax = document.getElementById('btnTaxLabel');
+            if (btnPrice) btnPrice.innerText = rawPrice.toLocaleString();
+            if (btnFrac) btnFrac.innerText = payFraction;
+            if (btnTax) btnTax.innerText = Math.round((1 + currentTaxRate) * 100) / 100;
+
+            // Update Result Cards
+            document.getElementById('finalPriceDisplay').innerText = formatYen(finalTaxInclPrice);
+            document.getElementById('discountAmountDisplay').innerText = formatYen(discountAmount);
+            document.getElementById('taxExclDisplay').innerText = formatYen(taxExclPrice);
+            document.getElementById('taxAmountDisplay').innerText = formatYen(taxAmount);
+
+            // Update Dynamic Problem Sentence
+            updateProblemSentence();
+
+            // Update Question Target Visibility
+            updateQuestionTarget();
+
+            // Update Formula Explanations
+            updateFormulaExplainer(rawPrice, discountFraction, payFraction, currentTaxRate, taxExclPrice, finalTaxInclPrice);
+
+            // Update Quick Matrix
+            updateQuickMatrix(rawPrice, currentTaxRate, roundingRule);
+        }
+
+        // Generate Formula Explanations
+        function updateFormulaExplainer(price, discountFrac, payFrac, taxRate, taxExclPrice, finalPrice) {
+            const step1 = document.getElementById('step1Text');
+            const step2 = document.getElementById('step2Text');
+            const step3 = document.getElementById('step3Text');
+            const combined = document.getElementById('combinedFormulaText');
+
+            // Format decimals cleanly for display
+            const discountFracClean = Math.round(discountFrac * 1000) / 1000;
+            const payFracClean = Math.round(payFrac * 1000) / 1000;
+            const taxRatePercent = Math.round(taxRate * 100);
+            const taxMult = Math.round((1 + taxRate) * 100) / 100;
+
+            step1.innerHTML = `
+                割引率 <b>${Math.round(discountFrac * 100)}%</b> を小数に変換すると <span class="text-indigo-600 font-bold">${discountFracClean}</span> です。<br>
+                定価を 1 とすると、支払う割合は <b>1 - ${discountFracClean} = <span class="bg-indigo-100 text-indigo-900 px-1.5 py-0.5 rounded font-bold">${payFracClean}</span></b>（元の価格の${Math.round(payFracClean * 100)}%）となります。
+            `;
+
+            step2.innerHTML = `
+                定価 <b>${price.toLocaleString()}円</b> に 支払う割合 <b>${payFracClean}</b> を掛けます。<br>
+                <span class="font-mono bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-bold">${price.toLocaleString()} × ${payFracClean} ＝ ${taxExclPrice.toLocaleString()}円</span>（税抜き）
+            `;
+
+            step3.innerHTML = `
+                消費税 <b>${taxRatePercent}%</b>（小数で ${taxRate}）を加算するため、価格に <b>(1 + ${taxRate}) ＝ <span class="text-amber-700 font-bold">${taxMult}倍</span></b> を掛けます。<br>
+                <span class="font-mono bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-bold">${taxExclPrice.toLocaleString()} × ${taxMult} ＝ ${finalPrice.toLocaleString()}円</span>（税込）
+            `;
+
+            combined.innerHTML = `
+                ${price.toLocaleString()} × (1 - ${discountFracClean}) × (1 + ${taxRate}) <br>
+                ＝ ${price.toLocaleString()} × ${payFracClean} × ${taxMult} ＝ <span class="text-base text-yellow-300 font-black">${finalPrice.toLocaleString()} 円</span>
+            `;
+        }
+
+        // Quick Matrix Builder
+        function updateQuickMatrix(price, taxRate, roundingRule) {
+            document.getElementById('matrixBasePrice').innerText = formatYen(price);
+            const grid = document.getElementById('quickMatrixGrid');
+            grid.innerHTML = '';
+
+            const patterns = [
+                { label: '1割引', frac: 0.1 },
+                { label: '2割引', frac: 0.2 },
+                { label: '3割引', frac: 0.3 },
+                { label: '5割引', frac: 0.5 },
+                { label: '15%引き', frac: 0.15 },
+                { label: '30%引き', frac: 0.3 }
+            ];
+
+            patterns.forEach(p => {
+                const payFrac = 1 - p.frac;
+                const taxExcl = applyRounding(price * payFrac, roundingRule);
+                const taxIncl = applyRounding(taxExcl * (1 + taxRate), roundingRule);
+
+                const card = document.createElement('div');
+                card.className = 'bg-slate-50 border border-slate-200 rounded-xl p-3 text-center transition hover:border-indigo-400 hover:bg-indigo-50/30';
+                card.innerHTML = `
+                    <div class="text-xs font-bold text-slate-500">${p.label}</div>
+                    <div class="text-[10px] text-indigo-600 font-medium my-0.5">× ${payFrac}倍</div>
+                    <div class="text-sm font-black text-slate-800">${formatYen(taxIncl)}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Shopping Cart Functions
+        function addToCart() {
+            const rawPrice = parseFloat(priceInput.value) || 0;
+            if (rawPrice <= 0) return;
+
+            const finalPriceText = document.getElementById('finalPriceDisplay').innerText;
+            const finalPriceVal = parseInt(finalPriceText.replace(/[^0-9]/g, '')) || 0;
+
+            let desc = '';
+            if (currentDiscountMode === 'wari') desc = `${wariVal.value}割引`;
+            else if (currentDiscountMode === 'percent') desc = `${percentVal.value}%引き`;
+            else desc = `${decimalVal.value}倍`;
+
+            const item = {
+                id: Date.now(),
+                price: rawPrice,
+                discountDesc: desc,
+                finalPrice: finalPriceVal
+            };
+
+            shoppingCart.push(item);
+            renderCart();
+        }
+
+        function removeFromCart(id) {
+            shoppingCart = shoppingCart.filter(item => item.id !== id);
+            renderCart();
+        }
+
+        function clearCart() {
+            shoppingCart = [];
+            renderCart();
+        }
+
+        function renderCart() {
+            const cartSection = document.getElementById('cartSection');
+            const tbody = document.getElementById('cartTableBody');
+            const totalDisplay = document.getElementById('cartTotalDisplay');
+
+            if (shoppingCart.length === 0) {
+                cartSection.classList.add('hidden');
+                return;
+            }
+
+            cartSection.classList.remove('hidden');
+            tbody.innerHTML = '';
+
+            let grandTotal = 0;
+
+            shoppingCart.forEach((item, idx) => {
+                grandTotal += item.finalPrice;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 border-b border-slate-100';
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold">商品${idx + 1} (${formatYen(item.price)})</td>
+                    <td class="p-2.5 text-indigo-600 font-bold">${item.discountDesc}</td>
+                    <td class="p-2.5 font-black text-slate-900">${formatYen(item.finalPrice)}</td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="removeFromCart(${item.id})" class="text-rose-500 hover:text-rose-700 text-xs px-2 py-1 rounded">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            totalDisplay.innerText = formatYen(grandTotal);
+        }
+    </script>
+</body>
+</html>
